@@ -3,125 +3,78 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro - 終點倒數版</title>
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="朝聖助手">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/854/854860.png">
-    <link rel="manifest" href="data:application/json;base64,ewogICJzaG9ydF9uYW1lIjogIuacnemBquWKqeWtmCIsCiAgIm5hbWUiOiAi5pydemBquS5i+i3ryBHUFMg5Yqp5omLIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmZmZmZmYiLAogICJ0aGVtZV9jb2xvciI6ICIjMWE1MDhiIgp9">
-
+    <title>朝聖助手 Pro - 安全分享版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f4f6f8; color: #333; overscroll-behavior: none; }
-        #map { height: 38vh; width: 100%; position: relative; border-bottom: 2px solid #ddd; z-index: 1; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: #f4f6f8; }
+        #map { height: 40vh; width: 100%; border-bottom: 2px solid #ddd; }
         
-        /* 倒數計時板樣式 */
-        .countdown-banner { padding: 15px; text-align: center; font-weight: bold; transition: all 0.5s ease; }
-        .silver-panel { background: linear-gradient(135deg, #bdc3c7, #95a5a6); color: #2c3e50; border-bottom: 2px solid #7f8c8d; }
-        .gold-panel { background: linear-gradient(135deg, #f1c40f, #d4af37); color: #5d4037; border-bottom: 2px solid #b8860b; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); }
+        /* 倒數計時板 */
+        .countdown-banner { padding: 12px; text-align: center; font-weight: bold; }
+        .silver-panel { background: linear-gradient(135deg, #bdc3c7, #95a5a6); color: #2c3e50; }
+        .gold-panel { background: linear-gradient(135deg, #f1c40f, #d4af37); color: #5d4037; }
         
-        .countdown-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: block; opacity: 0.9; }
-        .countdown-value { font-size: 22px; display: block; margin-top: 4px; }
-        .encouragement { font-size: 14px; margin-top: 5px; font-style: italic; display: block; }
-
-        .map-controls { position: absolute; bottom: 20px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .map-btn { background: white; border: none; padding: 12px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; font-size: 24px; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; }
-
-        .container { padding: 12px; width: 100%; max-width: 600px; margin: auto; padding-bottom: 40px; }
-        .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 12px; border: 1px solid #eee; }
+        .container { padding: 12px; max-width: 600px; margin: auto; }
+        .card { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 12px; }
         
-        .day-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .day-btn { flex: 1; padding: 12px 0; border: 2px solid #1a508b; border-radius: 12px; background: white; color: #1a508b; font-weight: bold; font-size: 13px; }
+        .day-selector { display: flex; gap: 5px; margin-bottom: 10px; }
+        .day-btn { flex: 1; padding: 10px 0; border-radius: 8px; border: 1px solid #1a508b; background: white; font-size: 12px; }
         .day-btn.active { background: #1a508b; color: white; }
-        .day-btn.has-data { border-color: #28a745; position: relative; }
 
-        label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 5px; color: #888; }
-        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1.5px solid #eee; margin-bottom: 10px; font-size: 16px; background: #fafafa; }
+        .share-box { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-share { flex: 1; background: #55acee; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-location { flex: 1; background: #9b59b6; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
         
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .stat-item { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eee; }
-        .stat-val { display: block; font-size: 18px; font-weight: bold; color: #1a508b; }
-        .stat-label { font-size: 10px; color: #888; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .stat-item { background: #f8f9fa; padding: 8px; border-radius: 8px; text-align: center; font-size: 13px; }
+        .stat-val { display: block; font-weight: bold; color: #1a508b; font-size: 16px; }
 
-        .action-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .btn-start { background: linear-gradient(135deg, #28a745, #218838); }
-        .btn-stop { background: linear-gradient(135deg, #dc3545, #c82333); }
-        
-        .recording-status { color: #dc3545; font-weight: bold; display: none; margin-top: 10px; text-align: center; animation: blink 1.2s infinite; font-size: 13px; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        #recording-label { color: #dc3545; font-size: 12px; text-align: center; margin-top: 5px; display: none; animation: blink 1.2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
-<!-- 動態倒數計時板 -->
 <div id="countdown-panel" class="countdown-banner silver-panel">
-    <span class="countdown-label" id="panel-title">Hacia Santiago (前往聖地牙哥)</span>
-    <span class="countdown-value" id="dist-to-cathedral">距離大教堂還有 -- 公里</span>
-    <span class="encouragement" id="encouragement-text">¡Buen Camino!</span>
+    <span id="dist-to-cathedral">載入中...</span><br>
+    <small id="encouragement-text">¡Buen Camino!</small>
 </div>
 
-<div id="map">
-    <div class="map-controls">
-        <button class="map-btn" onclick="quickLocate()">🎯</button>
-        <button class="map-btn" onclick="togglePOI()" id="poi-toggle">🍴</button>
-    </div>
-</div>
+<div id="map"></div>
 
 <div class="container">
     <div class="day-selector">
-        <button class="day-btn active" id="btn-1" onclick="switchDay(1)">Day 1</button>
-        <button class="day-btn" id="btn-2" onclick="switchDay(2)">Day 2</button>
-        <button class="day-btn" id="btn-3" onclick="switchDay(3)">Day 3</button>
-        <button class="day-btn" id="btn-4" onclick="switchDay(4)">Day 4</button>
+        <button class="day-btn active" onclick="switchDay(1)">Day 1</button>
+        <button class="day-btn" onclick="switchDay(2)">Day 2</button>
+        <button class="day-btn" onclick="switchDay(3)">Day 3</button>
+        <button class="day-btn" onclick="switchDay(4)">Day 4</button>
     </div>
 
     <div class="card">
-        <div style="display: flex; gap: 10px;">
-            <div style="flex:1;">
-                <label>⌚ 出發</label>
-                <input type="time" id="start-time" value="07:00" onchange="updateUI()">
-            </div>
-            <div style="flex:1;">
-                <label>⚡ 時速設定</label>
-                <select id="speed-setting" onchange="updateUI()">
-                    <option value="3.5">緩步 (3.5 km/h)</option>
-                    <option value="4.0" selected>標準 (4.0 km/h)</option>
-                    <option value="4.5">快步 (4.5 km/h)</option>
-                </select>
-            </div>
-        </div>
-
-        <label>📎 匯入今日 GPX</label>
-        <input type="file" id="gpx-input" accept=".gpx" onchange="handleGpxUpload(this)">
+        <label style="font-size: 12px; color: #666;">📎 匯入今日 GPX 路徑</label>
+        <input type="file" id="gpx-input" accept=".gpx" onchange="handleGpxUpload(this)" style="margin-top:5px; width:100%;">
         
         <div class="stat-grid">
-            <div class="stat-item">
-                <span class="stat-label">今日距離</span>
-                <span class="stat-val" id="today-dist">0.00 km</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">今日爬升</span>
-                <span class="stat-val" id="today-gain">0 m</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">預計抵達</span>
-                <span class="stat-val" id="arrival-time">--:--</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">補給站數量</span>
-                <span class="stat-val" id="poi-count" style="font-size: 14px;">等待中</span>
-            </div>
+            <div class="stat-item">今日距離<span class="stat-val" id="today-dist">0 km</span></div>
+            <div class="stat-item">預計抵達<span class="stat-val" id="arrival-time">--:--</span></div>
         </div>
     </div>
 
+    <!-- 安全回報區 -->
     <div class="card">
-        <div style="display: flex; gap:10px;">
-            <button class="action-btn btn-start" id="start-btn" onclick="startTracking()">開始步行紀錄</button>
-            <button class="action-btn btn-stop" id="stop-btn" style="display:none;" onclick="stopTracking()">停止紀錄</button>
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;">🚩 安全回報與標記</div>
+        <div class="share-box">
+            <button class="btn-location" onclick="markLocation('休息/住宿')">📍 標記當前位置</button>
+            <button class="btn-share" onclick="shareToFamily()">📤 傳送座標給家人</button>
         </div>
-        <div id="recording-label" class="recording-status">● 正在紀錄您的朝聖足跡...</div>
+        <p style="font-size: 11px; color: #888; margin-top: 8px;">* 標記後會在地圖留下紫色點。點擊「傳送」可將座標連結發送至 LINE/WhatsApp。</p>
+    </div>
+
+    <div class="card">
+        <button class="btn-share" style="background: #28a745;" onclick="startTracking()" id="start-btn">開始紀錄紅線</button>
+        <button class="btn-share" style="background: #dc3545; display:none;" onclick="stopTracking()" id="stop-btn">停止紀錄</button>
+        <div id="recording-label">● 正在繪製您的移動紅線...</div>
     </div>
 </div>
 
@@ -129,121 +82,66 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <script>
-    let map = L.map('map', { zoomControl: false }).setView([25.033, 121.565], 13);
+    let map = L.map('map', { zoomControl: false }).setView([42.774, -8.443], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    map.locate({setView: true, maxZoom: 15});
 
-    let dayData = {};
-    for (let i = 1; i <= 4; i++) {
-        dayData[i] = { gpxLayer: null, poiLayer: L.layerGroup(), dist: 0, gain: 0, poiStatus: "0" };
-    }
-
+    let dayData = { 1: {dist:0}, 2: {dist:0}, 3: {dist:0}, 4: {dist:0} };
     let currentDay = 1;
     let userMarker, watchId;
-    let liveTrackPoints = []; 
-    let liveTrackLayer = L.polyline([], {color: '#dc3545', weight: 5, dashArray: '5, 10'}).addTo(map);
-    let poiVisible = true;
-
-    function switchDay(day) {
-        Object.values(dayData).forEach(d => {
-            if(d.gpxLayer) map.removeLayer(d.gpxLayer);
-            if(d.poiLayer) map.removeLayer(d.poiLayer);
-        });
-        currentDay = day;
-        document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-${day}`).classList.add('active');
-        const data = dayData[day];
-        if (data.gpxLayer) {
-            data.gpxLayer.addTo(map);
-            if(poiVisible) data.poiLayer.addTo(map);
-            map.fitBounds(data.gpxLayer.getBounds(), {padding: [30, 30]});
-        }
-        updateUI();
-    }
+    let lastLat, lastLng;
+    let liveTrackPoints = [];
+    let liveTrackLayer = L.polyline([], {color: 'red', weight: 4, dashArray: '5, 8'}).addTo(map);
 
     function handleGpxUpload(input) {
         const file = input.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = e => {
-            if (dayData[currentDay].gpxLayer) map.removeLayer(dayData[currentDay].gpxLayer);
-            const gpx = new L.GPX(e.target.result, { 
-                async: true,
-                marker_options: { startIconUrl: '', endIconUrl: '', shadowUrl: '' },
-                polyline_options: { color: '#1a508b', weight: 5 }
-            }).on('loaded', ev => {
-                dayData[currentDay].gpxLayer = ev.target;
+            new L.GPX(e.target.result, { async: true, polyline_options: { color: '#1a508b' } })
+            .on('loaded', ev => {
                 dayData[currentDay].dist = parseFloat((ev.target.get_distance()/1000).toFixed(2));
-                dayData[currentDay].gain = ev.target.get_elevation_gain().toFixed(0);
-                document.getElementById(`btn-${currentDay}`).classList.add('has-data');
                 map.fitBounds(ev.target.getBounds());
-                fetchPOIs(ev.target);
                 updateUI();
             }).addTo(map);
         };
         reader.readAsText(file);
     }
 
-    async function fetchPOIs(gpxLayer) {
-        const b = gpxLayer.getBounds();
-        const query = `[out:json][timeout:25];node["amenity"~"restaurant|cafe|bar"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});out body;`;
-        try {
-            const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: `data=${encodeURIComponent(query)}` });
-            const data = await res.json();
-            const group = dayData[currentDay].poiLayer;
-            group.clearLayers();
-            data.elements.forEach(el => {
-                L.circleMarker([el.lat, el.lon], { radius: 7, color: '#fff', fillColor: '#27ae60', weight: 2, fillOpacity: 0.9 }).addTo(group);
-            });
-            if(poiVisible) group.addTo(map);
-            dayData[currentDay].poiStatus = data.elements.length;
-        } catch (e) { dayData[currentDay].poiStatus = "!"; }
-        updateUI();
+    function markLocation(type) {
+        navigator.geolocation.getCurrentPosition(p => {
+            const lat = p.coords.latitude;
+            const lng = p.coords.longitude;
+            lastLat = lat; lastLng = lng;
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup(`<b>${type}點</b><br>${new Date().toLocaleTimeString()}`).openPopup();
+            alert(`已在地圖標記：${type}`);
+        });
+    }
+
+    function shareToFamily() {
+        if (!lastLat) {
+            alert("請先點擊『標記當前位置』獲取座標");
+            return;
+        }
+        const text = encodeURIComponent(`家人您好，我現在在朝聖之路上！\n目前的座標位置是：\nhttps://www.google.com/maps?q=${lastLat},${lastLng}\n一切平安！`);
+        window.open(`https://api.whatsapp.com/send?text=${text}`);
+        // 如果想改用 LINE，可以使用： window.open(`https://line.me/R/msg/text/?${text}`);
     }
 
     function updateUI() {
-        const d = dayData[currentDay];
-        const speed = parseFloat(document.getElementById('speed-setting').value);
-        const startTime = document.getElementById('start-time').value;
-
-        document.getElementById('today-dist').innerText = `${d.dist} km`;
-        document.getElementById('today-gain').innerText = `${d.gain} m`;
-        document.getElementById('poi-count').innerText = `${d.poiStatus} 個`;
-
-        if (d.dist > 0) {
-            const [h, m] = startTime.split(':').map(Number);
-            const totalMin = (h * 60 + m) + (d.dist / speed * 60);
-            document.getElementById('arrival-time').innerText = `${Math.floor(totalMin/60)%24}:${Math.round(totalMin%60).toString().padStart(2,'0')}`;
-        }
-
-        // 里程累加計算
-        let totalRemaining = 0;
-        for (let i = currentDay; i <= 4; i++) {
-            totalRemaining += dayData[i].dist;
-        }
-
+        document.getElementById('today-dist').innerText = `${dayData[currentDay].dist} km`;
+        let total = 0;
+        for (let i = currentDay; i <= 4; i++) total += dayData[i].dist;
+        
         const panel = document.getElementById('countdown-panel');
-        const distText = document.getElementById('dist-to-cathedral');
-        const encourageText = document.getElementById('encouragement-text');
-
         if (currentDay == 4) {
             panel.className = "countdown-banner gold-panel";
-            distText.innerText = `最後 ${d.dist} 公里抵達聖地牙哥！`;
-            encourageText.innerText = "¡Santiago te espera! (聖雅各正在等著你！)";
+            document.getElementById('dist-to-cathedral').innerText = `最後抵達里程！`;
+            document.getElementById('encouragement-text').innerText = "¡Santiago te espera!";
         } else {
             panel.className = "countdown-banner silver-panel";
-            distText.innerText = totalRemaining > 0 ? `距離大教堂約剩 ${totalRemaining.toFixed(1)} 公里` : "請匯入後續 GPX 以計算里程";
-            encourageText.innerText = "¡Buen Camino! 一步一腳印前進";
+            document.getElementById('dist-to-cathedral').innerText = `距大教堂剩餘約 ${total.toFixed(1)} km`;
         }
-    }
-
-    function quickLocate() {
-        navigator.geolocation.getCurrentPosition(p => {
-            const ll = [p.coords.latitude, p.coords.longitude];
-            map.flyTo(ll, 16);
-            if (userMarker) userMarker.setLatLng(ll);
-            else userMarker = L.circleMarker(ll, { radius: 10, fillColor: '#007bff', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
-        });
     }
 
     function startTracking() {
@@ -252,9 +150,11 @@
         document.getElementById('recording-label').style.display = 'block';
         watchId = navigator.geolocation.watchPosition(p => {
             const ll = [p.coords.latitude, p.coords.longitude];
+            lastLat = ll[0]; lastLng = ll[1];
             liveTrackPoints.push(ll);
             liveTrackLayer.setLatLngs(liveTrackPoints);
             if (userMarker) userMarker.setLatLng(ll);
+            else userMarker = L.circleMarker(ll, {radius: 8, fillColor: 'blue', color: 'white'}).addTo(map);
             map.panTo(ll);
         }, null, { enableHighAccuracy: true });
     }
@@ -266,12 +166,12 @@
         document.getElementById('recording-label').style.display = 'none';
     }
 
-    function togglePOI() {
-        poiVisible = !poiVisible;
-        const group = dayData[currentDay].poiLayer;
-        if(poiVisible) group.addTo(map); else map.removeLayer(group);
-        document.getElementById('poi-toggle').style.background = poiVisible ? '#fff' : '#ddd';
+    function switchDay(day) {
+        currentDay = day;
+        document.querySelectorAll('.day-btn').forEach((b, i) => b.className = (i+1 === day ? 'day-btn active' : 'day-btn'));
+        updateUI();
     }
 </script>
 </body>
 </html>
+
