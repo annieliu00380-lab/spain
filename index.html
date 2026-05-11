@@ -3,45 +3,45 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro - 2026 全功能強化版</title>
+    <title>朝聖助手 Pro - 2026 修正強化版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #f4f7f6; color: #333; }
         #map { height: 40vh; width: 100%; border-bottom: 3px solid #ddd; z-index: 1; }
         
+        /* 懸浮定位按鈕 */
+        .locate-btn { position: absolute; bottom: 20px; right: 20px; z-index: 1000; background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); cursor: pointer; border: none; font-size: 24px; }
+
         .countdown-banner { padding: 20px; text-align: center; transition: all 0.4s ease; }
         .silver-panel { background: linear-gradient(135deg, #708090, #2c3e50); color: #fff; }
-        .gold-panel { background: linear-gradient(135deg, #d4af37, #f1c40f); color: #5d4037; box-shadow: inset 0 0 20px rgba(0,0,0,0.1); }
-        .countdown-val { font-size: 24px; font-weight: 800; display: block; letter-spacing: 1px; }
-        .encourage { font-size: 14px; margin-top: 5px; opacity: 0.8; display: block; font-style: italic; }
+        .gold-panel { background: linear-gradient(135deg, #d4af37, #f1c40f); color: #5d4037; }
+        .countdown-val { font-size: 24px; font-weight: 800; display: block; }
+        .encourage { font-size: 14px; margin-top: 5px; opacity: 0.8; font-style: italic; }
 
         .container { padding: 15px; max-width: 600px; margin: auto; }
         .card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 6px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
         
         .day-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .day-btn { flex: 1; padding: 12px 0; border-radius: 12px; border: 2px solid #1a508b; background: white; font-weight: bold; color: #1a508b; cursor: pointer; transition: 0.3s; }
-        .day-btn.active { background: #1a508b; color: white; transform: translateY(-2px); }
+        .day-btn { flex: 1; padding: 12px 0; border-radius: 12px; border: 2px solid #1a508b; background: white; font-weight: bold; color: #1a508b; cursor: pointer; }
+        .day-btn.active { background: #1a508b; color: white; }
 
-        label { font-size: 12px; font-weight: 700; color: #555; display: block; margin-bottom: 6px; margin-top: 10px; }
+        label { font-size: 12px; font-weight: 700; color: #555; display: block; margin-top: 10px; margin-bottom: 5px; }
         input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 15px; background: #fafafa; }
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-        .stat-item { background: #fff; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .stat-val { display: block; font-weight: 800; color: #1a508b; font-size: 19px; margin-top: 4px; }
+        .stat-item { background: #fff; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #eee; }
+        .stat-val { display: block; font-weight: 800; color: #1a508b; font-size: 19px; }
 
-        .weather-scroll { display: flex; overflow-x: auto; gap: 12px; padding: 10px 0; min-height: 100px; scrollbar-width: none; }
-        .weather-item { min-width: 85px; text-align: center; font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 12px; flex-shrink: 0; border: 1px solid #eee; }
-        .w-temp { font-weight: bold; color: #d35400; display: block; font-size: 15px; }
-        .w-rain { color: #2980b9; font-size: 11px; font-weight: 600; }
+        .weather-scroll { display: flex; overflow-x: auto; gap: 12px; padding: 10px 0; min-height: 80px; }
+        .weather-item { min-width: 80px; text-align: center; background: #f8f9fa; padding: 10px; border-radius: 12px; border: 1px solid #eee; }
 
         .btn-group { display: flex; gap: 10px; margin-top: 5px; }
-        .btn { flex: 1; padding: 16px; border: none; border-radius: 14px; font-weight: bold; color: white; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn { flex: 1; padding: 16px; border: none; border-radius: 14px; font-weight: bold; color: white; cursor: pointer; }
         .btn-line { background: #06C755; }
         .btn-mark { background: #8e44ad; }
         .btn-track { background: #c0392b; width: 100%; margin-top: 12px; }
-        
-        #recording-label { color: #c0392b; text-align: center; display: none; animation: blink 1.5s infinite; font-size: 13px; font-weight: bold; margin-top: 8px; }
+        #recording-label { color: #c0392b; text-align: center; display: none; animation: blink 1.5s infinite; font-weight: bold; margin-top: 8px; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
@@ -49,11 +49,14 @@
 
 <div id="countdown-panel" class="countdown-banner silver-panel">
     <span id="panel-title">Camino de Santiago 聖雅各之路</span>
-    <span class="countdown-val" id="dist-display">請匯入各日 GPX 軌跡</span>
+    <span class="countdown-val" id="dist-display">請匯入 GPX 軌跡</span>
     <span class="encourage" id="encourage-msg">¡Buen Camino!</span>
 </div>
 
-<div id="map"></div>
+<div style="position: relative;">
+    <div id="map"></div>
+    <button class="locate-btn" onclick="moveToUser()" title="我的位置">🎯</button>
+</div>
 
 <div class="container">
     <div class="day-selector">
@@ -74,27 +77,27 @@
         </div>
         
         <label>🏠 目的地 / 住宿</label>
-        <input type="text" id="stay-name" placeholder="輸入住宿點名稱..." oninput="updateUI()">
+        <input type="text" id="stay-name" placeholder="輸入住宿點..." oninput="saveDayConfig()">
 
         <label>📁 匯入該日 GPX 檔案</label>
-        <input type="file" class="gpx-input-field" accept=".gpx" onchange="handleGpxUpload(this)">
+        <input type="file" id="gpx-uploader" accept=".gpx" onchange="handleGpxUpload(this)">
         
         <div class="stat-grid">
             <div class="stat-item">今日行程<span class="stat-val" id="today-dist">0.0 km</span></div>
             <div class="stat-item">預計抵達<span class="stat-val" id="arrival-time">--:--</span></div>
-            <div class="stat-item">500m內補給<span class="stat-val" id="poi-count">0 處</span></div>
-            <div class="stat-item">至大教堂距離<span class="stat-val" id="remain-total">0.0 km</span></div>
+            <div class="stat-item">沿線補給<span class="stat-val" id="poi-count">0 處</span></div>
+            <div class="stat-item">至大教堂<span class="stat-val" id="remain-total">0.0 km</span></div>
         </div>
 
-        <label style="margin-top:15px;">☁️ 預報 (依 GPX 起點或目前位置)</label>
+        <label style="margin-top:15px;">☁️ 預報 (依今日起點)</label>
         <div class="weather-scroll" id="weather-list">
-            <div style="font-size:12px; color:#999; width:100%; text-align:center;">無資料</div>
+            <div style="font-size:12px; color:#999; padding:10px;">請匯入 GPX 以取得天氣</div>
         </div>
     </div>
 
     <div class="card">
         <div class="btn-group">
-            <button class="btn btn-mark" onclick="markLoc()">📍 標記位置</button>
+            <button class="btn btn-mark" onclick="markLoc()">📍 標記</button>
             <button class="btn btn-line" onclick="shareLine()">Line 報平安</button>
         </div>
         <button class="btn btn-track" id="track-btn" onclick="toggleTracking()">開始紀錄足跡</button>
@@ -106,229 +109,190 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <script>
-    // 初始化地圖
     let map = L.map('map', { zoomControl: false }).setView([42.8806, -8.5446], 13);
     L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: 'OSM' }).addTo(map);
 
-    // 數據存儲結構
-    let dayData = {
-        1: { dist: 0, stay: '', gpxLayer: null, poiLayer: L.layerGroup(), startCoord: null },
-        2: { dist: 0, stay: '', gpxLayer: null, poiLayer: L.layerGroup(), startCoord: null },
-        3: { dist: 0, stay: '', gpxLayer: null, poiLayer: L.layerGroup(), startCoord: null },
-        4: { dist: 0, stay: '', gpxLayer: null, poiLayer: L.layerGroup(), startCoord: null }
+    // 離線存儲與數據結構
+    let dayData = JSON.parse(localStorage.getItem('caminoData')) || {
+        1: { dist: 0, stay: '', gpxContent: null, startCoord: null },
+        2: { dist: 0, stay: '', gpxContent: null, startCoord: null },
+        3: { dist: 0, stay: '', gpxContent: null, startCoord: null },
+        4: { dist: 0, stay: '', gpxContent: null, startCoord: null }
     };
-    
+
+    let layers = { gpx: null, poi: L.layerGroup().addTo(map), trace: L.polyline([], {color: '#e74c3c', weight: 4, dashArray: '5, 10'}).addTo(map) };
     let currentDay = 1;
     let isTracking = false;
     let userMarker, lastCoord;
-    let tracePoints = [];
-    let traceLayer = L.polyline([], {color: '#e74c3c', weight: 4, dashArray: '5, 10'}).addTo(map);
 
-    // 定位圖示
-    const liveIcon = L.divIcon({
-        className: 'user-location-icon',
-        html: `<div style="width:16px;height:16px;background:#2196F3;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [16, 16]
-    });
+    // 初始化：載入緩存的數據
+    window.onload = () => {
+        loadDayData(1);
+        initLiveLocation();
+    };
 
-    // 1. 即時定位監聽
     function initLiveLocation() {
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(p => {
-                const ll = { lat: p.coords.latitude, lng: p.coords.longitude };
-                lastCoord = p.coords;
-                
-                if (userMarker) userMarker.setLatLng(ll);
-                else userMarker = L.marker(ll, {icon: liveIcon}).addTo(map);
-                
+                lastCoord = { lat: p.coords.latitude, lng: p.coords.longitude };
+                if (!userMarker) {
+                    userMarker = L.circleMarker(lastCoord, { radius: 8, color: '#fff', fillColor: '#2196F3', fillOpacity: 1, weight: 3 }).addTo(map);
+                } else {
+                    userMarker.setLatLng(lastCoord);
+                }
                 if (isTracking) {
-                    tracePoints.push([ll.lat, ll.lng]);
-                    traceLayer.setLatLngs(tracePoints);
+                    layers.trace.addLatLng(lastCoord);
                 }
             }, null, { enableHighAccuracy: true });
         }
     }
-    initLiveLocation();
 
-    // 2. 切換天數
-    function switchDay(day) {
-        // 隱藏當前圖層
-        if(dayData[currentDay].gpxLayer) map.removeLayer(dayData[currentDay].gpxLayer);
-        map.removeLayer(dayData[currentDay].poiLayer);
-
-        currentDay = day;
-        
-        // 更新按鈕樣式
-        document.querySelectorAll('.day-btn').forEach((btn, idx) => {
-            btn.classList.toggle('active', idx + 1 === day);
-        });
-
-        // 加載切換後的圖層
-        const d = dayData[day];
-        document.getElementById('stay-name').value = d.stay;
-        
-        if(d.gpxLayer) {
-            d.gpxLayer.addTo(map);
-            d.poiLayer.addTo(map);
-            map.fitBounds(d.gpxLayer.getBounds());
-            getWeather(d.startCoord);
-        } else {
-            // 如果沒 GPX, 嘗試抓取目前位置氣象
-            if(lastCoord) getWeather({lat: lastCoord.latitude, lng: lastCoord.longitude});
-        }
-        updateUI();
+    function moveToUser() {
+        if (lastCoord) map.panTo(lastCoord);
+        else alert("取得定位中...");
     }
 
-    // 3. GPX 處理
+    function switchDay(day) {
+        currentDay = day;
+        document.querySelectorAll('.day-btn').forEach((btn, idx) => btn.classList.toggle('active', idx + 1 === day));
+        loadDayData(day);
+    }
+
+    function loadDayData(day) {
+        const d = dayData[day];
+        document.getElementById('stay-name').value = d.stay || '';
+        if (layers.gpx) map.removeLayer(layers.gpx);
+        layers.poi.clearLayers();
+
+        if (d.gpxContent) {
+            renderGpx(d.gpxContent);
+        } else {
+            updateUI();
+        }
+    }
+
     function handleGpxUpload(input) {
         const file = input.files[0];
         if (!file) return;
-        
         const reader = new FileReader();
         reader.onload = e => {
-            // 清除該日舊軌跡
-            if(dayData[currentDay].gpxLayer) map.removeLayer(dayData[currentDay].gpxLayer);
-            
-            const gpx = new L.GPX(e.target.result, {
-                async: true,
-                polyline_options: { color: '#1a508b', weight: 6, opacity: 0.8 }
-            }).on('loaded', function(e) {
-                const g = e.target;
-                dayData[currentDay].gpxLayer = g;
-                dayData[currentDay].dist = parseFloat((g.get_distance() / 1000).toFixed(2));
-                
-                // 取得起點
-                const layers = g.getLayers();
-                let pts = layers[0].getLatLngs();
-                while(Array.isArray(pts[0])) pts = pts[0];
-                dayData[currentDay].startCoord = pts[0];
-
-                map.fitBounds(g.getBounds());
-                updateUI();
-                getWeather(dayData[currentDay].startCoord);
-                searchPois(dayData[currentDay].startCoord); // 搜尋起點周邊補給
-            }).addTo(map);
+            const content = e.target.result;
+            dayData[currentDay].gpxContent = content;
+            saveData();
+            renderGpx(content);
         };
         reader.readAsText(file);
     }
 
-    // 4. 補給點搜尋 (範圍 500m)
-    async function searchPois(latlng) {
-        if(!latlng) return;
-        const d = dayData[currentDay];
-        d.poiLayer.clearLayers();
-        
-        const offset = 0.005; // 約 500m 經緯度範圍
-        const bbox = `${latlng.lat-offset},${latlng.lng-offset},${latlng.lat+offset},${latlng.lng+offset}`;
-        const query = `[out:json];node["amenity"~"cafe|restaurant|bar|water_point"](${bbox});out body;`;
+    function renderGpx(content) {
+        if (layers.gpx) map.removeLayer(layers.gpx);
+        layers.gpx = new L.GPX(content, {
+            async: true,
+            polyline_options: { color: '#1a508b', weight: 5, opacity: 0.7 }
+        }).on('loaded', e => {
+            const g = e.target;
+            dayData[currentDay].dist = parseFloat((g.get_distance() / 1000).toFixed(2));
+            
+            // 抓取中心點或起點
+            const bounds = g.getBounds();
+            dayData[currentDay].startCoord = bounds.getCenter();
+            
+            map.fitBounds(bounds);
+            updateUI();
+            getWeather(dayData[currentDay].startCoord);
+            searchPois(bounds); // 以軌跡範圍搜尋補給
+        }).addTo(map);
+    }
+
+    async function searchPois(bounds) {
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        const bbox = `${sw.lat},${sw.lng},${ne.lat},${ne.lng}`;
+        // 搜尋餐廳、咖啡廳、飲水機、酒吧
+        const query = `[out:json][timeout:25];node["amenity"~"cafe|restaurant|bar|water_point"](${bbox});out body;`;
         
         try {
             const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: `data=${encodeURIComponent(query)}` });
             const data = await res.json();
+            layers.poi.clearLayers();
             data.elements.forEach(el => {
-                L.circleMarker([el.lat, el.lon], { 
-                    radius: 7, color: '#fff', fillColor: '#e67e22', weight: 2, fillOpacity: 0.9 
-                }).bindPopup(`🍴 ${el.tags.name || '補給點'}<br>類型: ${el.tags.amenity}`).addTo(d.poiLayer);
+                L.circleMarker([el.lat, el.lon], { radius: 6, color: '#fff', fillColor: '#e67e22', weight: 2, fillOpacity: 0.8 })
+                .bindPopup(`🍴 ${el.tags.name || '補給點'} (${el.tags.amenity})`).addTo(layers.poi);
             });
-            d.poiLayer.addTo(map);
             document.getElementById('poi-count').innerText = `${data.elements.length} 處`;
-        } catch(e) { console.error("POI Error"); }
+        } catch(e) { console.error("POI 載入失敗"); }
     }
 
-    // 5. 天氣預報 (API 加強)
+    function updateUI() {
+        const d = dayData[currentDay];
+        document.getElementById('today-dist').innerText = `${d.dist} km`;
+        
+        // 抵達時間
+        const speed = parseFloat(document.getElementById('walking-speed').value);
+        const startTime = document.getElementById('start-time').value;
+        if (d.dist > 0) {
+            const [h, m] = startTime.split(':').map(Number);
+            const arrival = new Date();
+            arrival.setHours(h, m + (d.dist / speed * 60));
+            document.getElementById('arrival-time').innerText = `${arrival.getHours()}:${arrival.getMinutes().toString().padStart(2,'0')}`;
+        }
+
+        // 滾動式總距離計算 (從當前天數往後加)
+        let totalRemain = 0;
+        for (let i = currentDay; i <= 4; i++) {
+            totalRemain += (dayData[i].dist || 0);
+        }
+        document.getElementById('remain-total').innerText = `${totalRemain.toFixed(1)} km`;
+        
+        const panel = document.getElementById('countdown-panel');
+        if (currentDay == 4) {
+            panel.className = "countdown-banner gold-panel";
+            document.getElementById('dist-display').innerText = totalRemain > 0 ? `最後 ${totalRemain.toFixed(1)} km 抵達聖城！` : "終點即將抵達";
+        } else {
+            panel.className = "countdown-banner silver-panel";
+            document.getElementById('dist-display').innerText = totalRemain > 0 ? `距離大教堂剩 ${totalRemain.toFixed(1)} km` : "請匯入 GPX";
+        }
+    }
+
     async function getWeather(latlng) {
         if(!latlng) return;
-        const weatherList = document.getElementById('weather-list');
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${latlng.lat}&longitude=${latlng.lng}&hourly=temperature_2m,precipitation_probability,weathercode&timezone=auto`;
-        
         try {
             const res = await fetch(url);
             const data = await res.json();
             let html = '';
-            const nowH = new Date().getHours();
-            
-            for(let i = nowH; i < nowH + 15; i += 3) {
-                if(!data.hourly.temperature_2m[i]) break;
-                const temp = data.hourly.temperature_2m[i];
-                const rain = data.hourly.precipitation_probability[i];
-                const code = data.hourly.weathercode[i];
-                let icon = '☀️';
-                if(code > 0) icon = '⛅';
-                if(code > 50) icon = '🌧️';
-                
-                html += `
-                    <div class="weather-item">
-                        <div style="color:#777; font-weight:bold;">${i%24}:00</div>
-                        <div style="font-size:22px; margin:5px 0;">${icon}</div>
-                        <span class="w-temp">${Math.round(temp)}°C</span>
-                        <span class="w-rain">💧 ${rain}%</span>
-                    </div>`;
+            for(let i = 8; i < 20; i += 3) {
+                const icon = data.hourly.weathercode[i] < 3 ? '☀️' : '☁️';
+                html += `<div class="weather-item"><div style="font-size:11px;">${i}:00</div><div>${icon}</div><b>${Math.round(data.hourly.temperature_2m[i])}°C</b></div>`;
             }
-            weatherList.innerHTML = html;
-        } catch(e) { weatherList.innerHTML = '讀取失敗'; }
+            document.getElementById('weather-list').innerHTML = html;
+        } catch(e) { }
     }
 
-    // 6. UI 更新與滾動距離計算
-    function updateUI() {
-        const d = dayData[currentDay];
-        d.stay = document.getElementById('stay-name').value;
-        const speed = parseFloat(document.getElementById('walking-speed').value);
-        const startTimeStr = document.getElementById('start-time').value;
-
-        document.getElementById('today-dist').innerText = `${d.dist} km`;
-        
-        // 抵達時間計算
-        if (d.dist > 0) {
-            const [h, m] = startTimeStr.split(':').map(Number);
-            const totalMin = (h * 60 + m) + (d.dist / speed * 60);
-            const arrH = Math.floor(totalMin / 60) % 24;
-            const arrM = Math.round(totalMin % 60).toString().padStart(2, '0');
-            document.getElementById('arrival-time').innerText = `${arrH}:${arrM}`;
-        }
-
-        // 核心：至大教堂 (D4) 的滾動距離
-        let totalToCathedral = 0;
-        for (let i = currentDay; i <= 4; i++) {
-            totalToCathedral += dayData[i].dist;
-        }
-        document.getElementById('remain-total').innerText = `${totalToCathedral.toFixed(1)} km`;
-        
-        // 面板視覺回饋
-        const panel = document.getElementById('countdown-panel');
-        const distDisplay = document.getElementById('dist-display');
-        const encourage = document.getElementById('encourage-msg');
-
-        if(currentDay == 4) {
-            panel.className = "countdown-banner gold-panel";
-            distDisplay.innerText = totalToCathedral > 0 ? `最後 ${totalToCathedral.toFixed(1)} km 抵達聖地牙哥！` : "終點就在眼前";
-            encourage.innerText = "¡Santiago te espera!";
-        } else {
-            panel.className = "countdown-banner silver-panel";
-            distDisplay.innerText = totalToCathedral > 0 ? `距離大教堂剩 ${totalToCathedral.toFixed(1)} km` : "請匯入 GPX";
-            encourage.innerText = "¡Buen Camino!";
-        }
+    function saveDayConfig() {
+        dayData[currentDay].stay = document.getElementById('stay-name').value;
+        saveData();
     }
 
-    // 標記與分享
-    function markLoc() { 
-        if(!lastCoord) return alert("尚未取得 GPS 定位");
-        L.marker([lastCoord.latitude, lastCoord.longitude]).addTo(map)
-            .bindPopup(`<b>標記點</b><br>時間: ${new Date().toLocaleTimeString()}`).openPopup(); 
+    function saveData() {
+        localStorage.setItem('caminoData', JSON.stringify(dayData));
     }
-    
+
     function toggleTracking() {
         isTracking = !isTracking;
-        const btn = document.getElementById('track-btn');
-        btn.innerText = isTracking ? "停止紀錄足跡" : "開始紀錄足跡";
-        btn.style.background = isTracking ? "#333" : "#c0392b";
+        document.getElementById('track-btn').innerText = isTracking ? "停止紀錄" : "開始紀錄足跡";
         document.getElementById('recording-label').style.display = isTracking ? "block" : "none";
-        if(isTracking) tracePoints = [];
+    }
+
+    function markLoc() {
+        if (!lastCoord) return alert("定位不可用");
+        L.marker(lastCoord).addTo(map).bindPopup("標記位置: " + new Date().toLocaleTimeString()).openPopup();
     }
 
     function shareLine() {
         if(!lastCoord) return alert("無定位資訊");
         const remain = document.getElementById('remain-total').innerText;
-        const msg = encodeURIComponent(`【朝聖者報平安】\n當前位置：Day ${currentDay}\n距離聖地牙哥大教堂還有：${remain}\n目前地圖座標：\nhttps://www.google.com/maps?q=${lastCoord.latitude},${lastCoord.longitude}`);
+        const msg = encodeURIComponent(`【朝聖平安】\n第 ${currentDay} 天\n距離大教堂：${remain}\n地圖：https://www.google.com/maps?q=${lastCoord.lat},${lastCoord.lng}`);
         window.open(`https://line.me/R/msg/text/?${msg}`);
     }
 </script>
