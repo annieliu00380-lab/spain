@@ -3,14 +3,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro - 滾動里程修正版</title>
+    <title>朝聖助手 Pro - 即時定位強化版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
         #map { height: 35vh; width: 100%; border-bottom: 2px solid #ccc; }
         
-        /* 倒數計時板 */
         .countdown-banner { padding: 15px; text-align: center; font-weight: bold; transition: 0.5s; }
         .silver-panel { background: linear-gradient(135deg, #bdc3c7, #95a5a6); color: #2c3e50; border-bottom: 3px solid #7f8c8d; }
         .gold-panel { background: linear-gradient(135deg, #f1c40f, #d4af37); color: #5d4037; border-bottom: 3px solid #b8860b; }
@@ -87,7 +86,7 @@
         <label>🏠 住宿地點</label>
         <input type="text" id="stay-name" placeholder="輸入旅館名稱" onchange="saveDayData()">
         
-        <label>📎 匯入今日 GPX 檔案 (修正版)</label>
+        <label>📎 匯入今日 GPX 檔案</label>
         <input type="file" id="gpx-input" accept=".gpx" onchange="handleGpxUpload(this)">
         
         <div class="stat-grid">
@@ -126,10 +125,46 @@
         3: { dist: 0, stay: '', time: '07:00', gpx: null, pois: L.layerGroup(), startCoord: null },
         4: { dist: 0, stay: '', time: '07:00', gpx: null, pois: L.layerGroup(), startCoord: null }
     };
+    
     let currentDay = 1;
-    let watchId, userMarker, lastCoord;
+    let isTracking = false;
+    let userMarker, lastCoord;
     let tracePoints = [];
     let traceLayer = L.polyline([], {color: 'red', weight: 4, dashArray: '5, 8'}).addTo(map);
+
+    // 啟動即時定位監控 (進入網頁即執行)
+    function initLiveLocation() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(p => {
+                const ll = [p.coords.latitude, p.coords.longitude];
+                lastCoord = p.coords;
+
+                // 更新或創建定位藍點
+                if (userMarker) {
+                    userMarker.setLatLng(ll);
+                } else {
+                    userMarker = L.circleMarker(ll, {
+                        radius: 8, 
+                        color: 'white', 
+                        fillColor: '#2196F3', 
+                        fillOpacity: 1, 
+                        weight: 2
+                    }).addTo(map).bindPopup("你的目前位置").openPopup();
+                    map.setView(ll, 15);
+                }
+
+                // 如果正在錄製足跡，則畫紅線
+                if (isTracking) {
+                    tracePoints.push(ll);
+                    traceLayer.setLatLngs(tracePoints);
+                }
+            }, err => {
+                console.error("GPS Error:", err);
+            }, { enableHighAccuracy: true, timeout: 10000 });
+        }
+    }
+
+    initLiveLocation(); // 執行定位
 
     function switchDay(day) {
         Object.values(dayData).forEach(d => { 
@@ -165,15 +200,13 @@
         const reader = new FileReader();
         reader.onload = e => {
             if(dayData[currentDay].gpx) map.removeLayer(dayData[currentDay].gpx);
-            
             const gpx = new L.GPX(e.target.result, { 
                 async: true, 
                 polyline_options: { color: '#1a508b', weight: 5 } 
             }).on('loaded', function(e) {
                 const g = e.target;
                 dayData[currentDay].gpx = g;
-                const distanceMeters = g.get_distance();
-                dayData[currentDay].dist = parseFloat((distanceMeters / 1000).toFixed(2));
+                dayData[currentDay].dist = parseFloat((g.get_distance() / 1000).toFixed(2));
                 
                 const layers = g.getLayers();
                 if(layers.length > 0 && layers[0].getLatLngs) {
@@ -185,8 +218,6 @@
                 searchCatering(g);
                 getWeather(dayData[currentDay].startCoord);
                 updateUI();
-            }).on('error', function() {
-                alert("GPX 檔案格式錯誤。");
             }).addTo(map);
         };
         reader.readAsText(file);
@@ -207,9 +238,7 @@
                 html += `<div class="weather-item"><div>${i}:00</div><div style="font-size:18px">${icon}</div><span class="w-temp">${temp}°C</span><span class="w-rain">☔${rain}%</span></div>`;
             }
             document.getElementById('weather-list').innerHTML = html;
-        } catch(e) { 
-            document.getElementById('weather-list').innerHTML = '天氣載入失敗';
-        }
+        } catch(e) { document.getElementById('weather-list').innerHTML = '天氣載入失敗'; }
     }
 
     async function searchCatering(gpxLayer) {
@@ -243,14 +272,12 @@
             document.getElementById('arrival-time').innerText = `${arrH}:${arrM}`;
         }
 
-        // 核心邏輯修正：滾動式計算距離大教堂的總剩餘公里數
-        // 從「當前選擇的天數」開始往後累加所有 GPX 的距離
         let totalRemaining = 0;
-        let hasLaterData = false;
+        let hasData = false;
         for (let i = currentDay; i <= 4; i++) {
             if (dayData[i].dist > 0) {
                 totalRemaining += dayData[i].dist;
-                hasLaterData = true;
+                hasData = true;
             }
         }
         document.getElementById('remain-total').innerText = `${totalRemaining.toFixed(1)} km`;
@@ -262,47 +289,38 @@
         if (currentDay == 4) {
             panel.className = "countdown-banner gold-panel";
             distLabel.innerText = d.dist > 0 ? `最後 ${d.dist.toFixed(1)} km 抵達聖地牙哥！` : "請匯入 D4 檔案";
-            encourage.innerText = "¡Santiago te espera! (聖雅各正在等著你！)";
+            encourage.innerText = "¡Santiago te espera!";
         } else {
             panel.className = "countdown-banner silver-panel";
-            // 根據當前天數的起始點（即該天及其後所有里程總和）來顯示
-            distLabel.innerText = hasLaterData ? `今日出發後，距離大教堂約剩 ${totalRemaining.toFixed(1)} km` : "請匯入 GPX 檔案";
+            distLabel.innerText = hasData ? `今日起算剩餘 ${totalRemaining.toFixed(1)} km` : "請匯入 GPX 檔案";
             encourage.innerText = "¡Buen Camino!";
         }
     }
 
     function markLoc() {
-        navigator.geolocation.getCurrentPosition(p => {
-            lastCoord = p.coords;
-            L.marker([p.coords.latitude, p.coords.longitude]).addTo(map).bindPopup("目前標記位置").openPopup();
-            alert("位置已標記，可點擊 Line 傳送。");
-        }, () => alert("無法獲取 GPS 位置"));
+        if(lastCoord) {
+            L.marker([lastCoord.latitude, lastCoord.longitude]).addTo(map).bindPopup("標記點").openPopup();
+            alert("目前位置已標記！");
+        } else {
+            alert("尚未取得 GPS 定位");
+        }
     }
 
     function shareLine() {
-        if(!lastCoord) return alert("請先點擊『標記位置』");
+        if(!lastCoord) return alert("尚未定位");
         const msg = encodeURIComponent(`朝聖報平安！\n第 ${currentDay} 天：${dayData[currentDay].stay || '前進中'}\n抵達預計：${document.getElementById('arrival-time').innerText}\n目前位置：\nhttp://maps.google.com/maps?q=${lastCoord.latitude},${lastCoord.longitude}`);
         window.open(`https://line.me/R/msg/text/?${msg}`);
     }
 
     function toggleTracking() {
-        if(watchId) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
-            document.getElementById('track-btn').innerText = "開始紀錄紅線足跡";
-            document.getElementById('recording-label').style.display = "none";
-        } else {
+        isTracking = !isTracking;
+        if(isTracking) {
             document.getElementById('track-btn').innerText = "停止紀錄";
             document.getElementById('recording-label').style.display = "block";
-            watchId = navigator.geolocation.watchPosition(p => {
-                const ll = [p.coords.latitude, p.coords.longitude];
-                lastCoord = p.coords;
-                tracePoints.push(ll);
-                traceLayer.setLatLngs(tracePoints);
-                if (userMarker) userMarker.setLatLng(ll);
-                else userMarker = L.circleMarker(ll, {radius: 7, color: 'blue', fillColor: 'white', fillOpacity: 1}).addTo(map);
-                map.panTo(ll);
-            }, null, { enableHighAccuracy: true });
+            tracePoints = []; // 重新開始一段新線條
+        } else {
+            document.getElementById('track-btn').innerText = "開始紀錄紅線足跡";
+            document.getElementById('recording-label').style.display = "none";
         }
     }
 </script>
