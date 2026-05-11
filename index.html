@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro - 終極整合版</title>
+    <title>朝聖助手 Pro - 終極整合時速版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -25,7 +25,7 @@
         .day-btn.active { background: #1a508b; color: white; }
 
         label { font-size: 11px; font-weight: bold; color: #777; display: block; margin-bottom: 4px; }
-        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; font-size: 15px; }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; font-size: 15px; background: #fff; }
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .stat-item { background: #f8f9fa; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
@@ -52,6 +52,7 @@
 <div id="map"></div>
 
 <div class="container">
+    <!-- 1. 天數切換 -->
     <div class="day-selector">
         <button class="day-btn active" id="btn-1" onclick="switchDay(1)">D1</button>
         <button class="day-btn" id="btn-2" onclick="switchDay(2)">D2</button>
@@ -59,30 +60,42 @@
         <button class="day-btn" id="btn-4" onclick="switchDay(4)">D4</button>
     </div>
 
+    <!-- 2. 出發設定與住宿地點 -->
     <div class="card">
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
                 <label>⌚ 出發時間</label>
-                <select id="start-time" onchange="saveDayData()">
+                <select id="start-time" onchange="updateUI()">
                     <option value="05:00">05:00</option><option value="06:00">06:00</option>
                     <option value="07:00" selected>07:00</option><option value="08:00">08:00</option>
+                    <option value="09:00">09:00</option>
                 </select>
             </div>
-            <div style="flex: 2;">
-                <label>🏠 住宿地點</label>
-                <input type="text" id="stay-name" placeholder="輸入今晚旅館名稱" onchange="saveDayData()">
+            <div style="flex: 1;">
+                <label>⚡ 預計時速</label>
+                <select id="walking-speed" onchange="updateUI()">
+                    <option value="3.5">3.5 km/h (緩步)</option>
+                    <option value="4.0" selected>4.0 km/h (標準)</option>
+                    <option value="4.5">4.5 km/h (快步)</option>
+                    <option value="5.0">5.0 km/h (極速)</option>
+                </select>
             </div>
         </div>
+        <label>🏠 住宿地點</label>
+        <input type="text" id="stay-name" placeholder="輸入今晚旅館或城鎮名稱" onchange="saveDayData()">
         
-        <label>📎 匯入今日 GPX (自動搜尋沿路補給)</label>
+        <label>📎 匯入今日 GPX</label>
         <input type="file" id="gpx-input" accept=".gpx" onchange="handleGpxUpload(this)">
         
         <div class="stat-grid">
             <div class="stat-item">今日距離<span class="stat-val" id="today-dist">0 km</span></div>
+            <div class="stat-item">預計抵達<span class="stat-val" id="arrival-time">--:--</span></div>
             <div class="stat-item">沿路咖啡/餐飲<span class="stat-val" id="poi-count">0 個</span></div>
+            <div class="stat-item">剩餘總里程<span class="stat-val" id="remain-total">0 km</span></div>
         </div>
     </div>
 
+    <!-- 3. 安全與紀錄按鈕 -->
     <div class="card">
         <div class="btn-group">
             <button class="btn btn-mark" onclick="markLoc()">📍 標記位置</button>
@@ -130,6 +143,7 @@
     function saveDayData() {
         dayData[currentDay].time = document.getElementById('start-time').value;
         dayData[currentDay].stay = document.getElementById('stay-name').value;
+        updateUI();
     }
 
     function handleGpxUpload(input) {
@@ -169,9 +183,26 @@
     }
 
     function updateUI() {
-        document.getElementById('today-dist').innerText = `${dayData[currentDay].dist} km`;
+        const d = dayData[currentDay];
+        const speed = parseFloat(document.getElementById('walking-speed').value);
+        const startTimeStr = document.getElementById('start-time').value;
+
+        // 計算今日距離
+        document.getElementById('today-dist').innerText = `${d.dist} km`;
+
+        // 計算預計抵達時間
+        if (d.dist > 0) {
+            const [h, m] = startTimeStr.split(':').map(Number);
+            const totalMinutes = (h * 60 + m) + (d.dist / speed * 60);
+            const arrH = Math.floor(totalMinutes / 60) % 24;
+            const arrM = Math.round(totalMinutes % 60).toString().padStart(2, '0');
+            document.getElementById('arrival-time').innerText = `${arrH}:${arrM}`;
+        }
+
+        // 剩餘總里程累加
         let totalRemaining = 0;
         for (let i = currentDay; i <= 4; i++) totalRemaining += dayData[i].dist;
+        document.getElementById('remain-total').innerText = `${totalRemaining.toFixed(1)} km`;
 
         const panel = document.getElementById('countdown-panel');
         const distLabel = document.getElementById('dist-display');
@@ -186,20 +217,21 @@
             distLabel.innerText = totalRemaining > 0 ? `距離大教堂約剩 ${totalRemaining.toFixed(1)} km` : "請匯入後續 GPX";
             encourage.innerText = "¡Buen Camino!";
         }
+        dayData[currentDay].time = startTimeStr;
     }
 
     function markLoc() {
         navigator.geolocation.getCurrentPosition(p => {
             lastCoord = p.coords;
             L.marker([p.coords.latitude, p.coords.longitude]).addTo(map)
-                .bindPopup(`<b>標記點</b><br>${new Date().toLocaleTimeString()}`).openPopup();
-            alert("位置已標記，可點擊 Line 分享給家人。");
+                .bindPopup(`<b>目前標記點</b><br>${new Date().toLocaleTimeString()}`).openPopup();
+            alert("位置已標記，可點擊 Line 分享。");
         });
     }
 
     function shareLine() {
         if(!lastCoord) return alert("請先點擊『標記位置』");
-        const msg = encodeURIComponent(`朝聖報平安！\n第 ${currentDay} 天：${dayData[currentDay].stay || '路上'}\n目前位置：\nhttps://www.google.com/maps?q=${lastCoord.latitude},${lastCoord.longitude}`);
+        const msg = encodeURIComponent(`朝聖報平安！\n第 ${currentDay} 天：${dayData[currentDay].stay || '路途中'}\n預計抵達：${document.getElementById('arrival-time').innerText}\n目前位置：\nhttps://www.google.com/maps?q=${lastCoord.latitude},${lastCoord.longitude}`);
         window.open(`https://line.me/R/msg/text/?${msg}`);
     }
 
