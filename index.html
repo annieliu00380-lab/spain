@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro</title>
+    <title>朝聖助手 4-Day Pro</title>
 
-    <!-- PWA App 化核心設定 -->
+    <!-- PWA App 化設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="朝聖助手">
@@ -14,49 +14,51 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f0f2f5; color: #333; overscroll-behavior: none; }
         #map { height: 45vh; width: 100%; position: relative; border-bottom: 2px solid #ddd; z-index: 1; }
         
-        /* 懸浮控制鈕 */
         .map-controls { position: absolute; bottom: 20px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .map-btn { background: white; border: none; padding: 12px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; font-size: 22px; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .map-btn:active { background: #e0e0e0; transform: scale(0.9); }
+        .map-btn { background: white; border: none; padding: 12px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; font-size: 24px; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; }
 
-        .container { padding: 15px; max-width: 600px; margin: auto; padding-bottom: 40px; }
-        .card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 15px; border: 1px solid #eee; }
+        .container { padding: 12px; width: 100%; max-width: 600px; margin: auto; padding-bottom: 40px; }
+        .card { background: white; border-radius: 16px; padding: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 12px; border: 1px solid #eee; width: 100%; }
         
-        /* 天數切換器 */
-        .day-selector { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
-        .day-btn { padding: 10px 20px; border: 2px solid #1a508b; border-radius: 25px; background: white; color: #1a508b; white-space: nowrap; font-weight: bold; font-size: 14px; }
-        .day-btn.active { background: #1a508b; color: white; box-shadow: 0 4px 8px rgba(26,80,139,0.3); }
+        /* 天數切換器：固定 4 天 */
+        .day-selector { display: flex; gap: 10px; margin-bottom: 15px; padding-bottom: 5px; }
+        .day-btn { flex: 1; padding: 12px 0; border: 2px solid #1a508b; border-radius: 12px; background: white; color: #1a508b; font-weight: bold; font-size: 14px; text-align: center; }
+        .day-btn.active { background: #1a508b; color: white; }
         .day-btn.has-data { border-color: #28a745; position: relative; }
-        .day-btn.has-data::after { content: '✔'; position: absolute; top: -5px; right: -2px; background: #28a745; color: white; border-radius: 50%; font-size: 10px; padding: 2px 4px; }
+        .day-btn.has-data::after { content: '✓'; position: absolute; top: -5px; right: -5px; background: #28a745; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; line-height: 18px; }
 
-        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-        select, input { width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #ddd; margin-bottom: 15px; font-size: 16px; box-sizing: border-box; background: #fafafa; }
+        label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; color: #777; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #ddd; margin-bottom: 12px; font-size: 16px; background: #fafafa; }
         
-        .status-box { background: #f8f9fa; border-left: 4px solid #1a508b; padding: 15px; border-radius: 8px; margin-top: 10px; }
-        .action-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; font-size: 17px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .status-box { background: #f8f9fa; border-left: 4px solid #1a508b; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+        .action-btn { flex: 1; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; font-size: 16px; transition: 0.2s; }
         .btn-start { background: linear-gradient(135deg, #28a745, #218838); }
         .btn-stop { background: linear-gradient(135deg, #dc3545, #c82333); }
         
-        .recording-status { color: #dc3545; font-weight: bold; display: none; margin-top: 10px; text-align: center; font-size: 14px; }
-        .recording-status span { animation: blink 1.2s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .recording-status { color: #dc3545; font-weight: bold; display: none; margin-top: 10px; text-align: center; animation: blink 1.2s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="map">
     <div class="map-controls">
-        <button class="map-btn" onclick="quickLocate()" title="我的位置">🎯</button>
-        <button class="map-btn" onclick="togglePOI()" id="poi-toggle" title="切換補給站">🍴</button>
+        <button class="map-btn" onclick="quickLocate()">🎯</button>
+        <button class="map-btn" onclick="togglePOI()" id="poi-toggle">🍴</button>
     </div>
 </div>
 
 <div class="container">
-    <div class="day-selector" id="day-buttons">
-        <!-- JS 自動生成 -->
+    <!-- 固定 4 天按鈕 -->
+    <div class="day-selector">
+        <button class="day-btn active" id="btn-1" onclick="switchDay(1)">Day 1</button>
+        <button class="day-btn" id="btn-2" onclick="switchDay(2)">Day 2</button>
+        <button class="day-btn" id="btn-3" onclick="switchDay(3)">Day 3</button>
+        <button class="day-btn" id="btn-4" onclick="switchDay(4)">Day 4</button>
     </div>
 
     <div class="card">
@@ -65,36 +67,35 @@
             <span id="dist-tag" style="background:#eef2f7; padding:4px 10px; border-radius:15px; font-size:12px; font-weight:bold; color:#1a508b;">0.00 km</span>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div>
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1;">
                 <label>⌚ 出發</label>
                 <input type="time" id="start-time" value="07:00" onchange="saveDaySettings()">
             </div>
-            <div>
+            <div style="flex:1.5;">
                 <label>🚩 起點</label>
-                <input type="text" id="start-location" placeholder="地點名稱" oninput="saveDaySettings()">
+                <input type="text" id="start-location" placeholder="地點" oninput="saveDaySettings()">
             </div>
         </div>
 
-        <label>🏨 今日預計下榻</label>
-        <input type="text" id="stay-location" placeholder="庇護所或城市名稱" oninput="saveDaySettings()">
+        <label>🏨 住宿目的地</label>
+        <input type="text" id="stay-location" placeholder="預計下榻處" oninput="saveDaySettings()">
 
-        <label>📎 匯入今日 GPX</label>
+        <label>📎 匯入今日 GPX 軌跡</label>
         <input type="file" id="gpx-input" accept=".gpx" onchange="handleGpxUpload(this)">
         
         <div id="stats" class="status-box">
-            <div id="data-text" style="line-height: 1.8;">🚀 準備好出發了嗎？請先匯入 GPX。</div>
-            <div id="poi-info" style="color: #888; font-size: 12px; margin-top: 8px; font-style: italic;"></div>
+            <div id="data-text">已定位至目前位置。請匯入 GPX。</div>
+            <div id="poi-info" style="color: #666; font-size: 12px; margin-top: 5px;"></div>
         </div>
     </div>
 
     <div class="card">
-        <label>🛰️ 實時追蹤紀錄</label>
-        <div style="display: flex; gap:12px;">
+        <div style="display: flex; gap:10px;">
             <button class="action-btn btn-start" id="start-btn" onclick="startTracking()">開始步行紀錄</button>
             <button class="action-btn btn-stop" id="stop-btn" style="display:none;" onclick="stopTracking()">停止紀錄</button>
         </div>
-        <div id="recording-label" class="recording-status"><span>●</span> 正在紀錄您的朝聖足跡...</div>
+        <div id="recording-label" class="recording-status">● 正在紀錄足跡...</div>
     </div>
 </div>
 
@@ -102,38 +103,29 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
 <script>
-    // 初始化地圖 (西班牙座標)
-    let map = L.map('map', { zoomControl: false }).setView([42.8806, -8.5446], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OSM'
-    }).addTo(map);
+    // 初始化地圖，優先嘗試定位使用者
+    let map = L.map('map', { zoomControl: false }).setView([25.033, 121.565], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // 啟動自動搜尋目前位置
+    map.locate({setView: true, maxZoom: 15});
 
     let dayData = {};
-    for (let i = 1; i <= 35; i++) { // 預設 35 天
-        dayData[i] = { gpxLayer: null, poiLayer: L.layerGroup(), startTime: "07:00", startLoc: "", stay: "", dist: 0, gain: 0, poiStatus: "尚未掃描" };
+    for (let i = 1; i <= 4; i++) {
+        dayData[i] = { gpxLayer: null, poiLayer: L.layerGroup(), startTime: "07:00", startLoc: "", stay: "", dist: 0, gain: 0, poiStatus: "" };
     }
 
     let currentDay = 1;
     let userMarker, watchId;
     let liveTrackPoints = []; 
-    let liveTrackLayer = L.polyline([], {color: '#dc3545', weight: 4, dashArray: '5, 8'}).addTo(map);
+    let liveTrackLayer = L.polyline([], {color: '#dc3545', weight: 5, dashArray: '5, 10'}).addTo(map);
     let poiVisible = true;
 
-    // --- 初始化天數按鈕 ---
-    const btnContainer = document.getElementById('day-buttons');
-    for (let i = 1; i <= 31; i++) {
-        const b = document.createElement('button');
-        b.className = i === 1 ? 'day-btn active' : 'day-btn';
-        b.id = `btn-${i}`;
-        b.innerText = `D${i}`;
-        b.onclick = () => switchDay(i);
-        btnContainer.appendChild(b);
-    }
-
     function switchDay(day) {
+        // 移除舊的圖層
         Object.values(dayData).forEach(d => {
-            if(d.gpxLayer && map.hasLayer(d.gpxLayer)) map.removeLayer(d.gpxLayer);
-            if(d.poiLayer && map.hasLayer(d.poiLayer)) map.removeLayer(d.poiLayer);
+            if(d.gpxLayer) map.removeLayer(d.gpxLayer);
+            if(d.poiLayer) map.removeLayer(d.poiLayer);
         });
 
         currentDay = day;
@@ -150,7 +142,7 @@
         if (data.gpxLayer) {
             data.gpxLayer.addTo(map);
             if(poiVisible) data.poiLayer.addTo(map);
-            map.fitBounds(data.gpxLayer.getBounds(), {padding: [20, 20]});
+            map.fitBounds(data.gpxLayer.getBounds(), {padding: [30, 30]});
         }
         updateUI();
     }
@@ -158,18 +150,14 @@
     function handleGpxUpload(input) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = e => {
             if (dayData[currentDay].gpxLayer) map.removeLayer(dayData[currentDay].gpxLayer);
-            
             const gpx = new L.GPX(e.target.result, { 
                 async: true,
                 marker_options: { startIconUrl: '', endIconUrl: '', shadowUrl: '' },
-                polyline_options: { color: '#1a508b', weight: 4, opacity: 0.8 }
-            });
-
-            gpx.on('loaded', ev => {
+                polyline_options: { color: '#1a508b', weight: 5, opacity: 0.8 }
+            }).on('loaded', ev => {
                 dayData[currentDay].gpxLayer = ev.target;
                 dayData[currentDay].dist = (ev.target.get_distance()/1000).toFixed(2);
                 dayData[currentDay].gain = ev.target.get_elevation_gain().toFixed(0);
@@ -183,10 +171,12 @@
     }
 
     async function fetchPOIs(gpxLayer) {
-        dayData[currentDay].poiStatus = "⏳ 補給站搜尋中...";
+        dayData[currentDay].poiStatus = "⏳ 搜尋沿路補給站...";
         updateUI();
         const b = gpxLayer.getBounds();
-        const query = `[out:json];node["amenity"~"restaurant|cafe|bar|albergue"](${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()});out;`;
+        const bbox = `${b.getSouth()},${b.getWest()},${b.getNorth()},${b.getEast()}`;
+        // 搜尋餐廳、咖啡廳、酒吧
+        const query = `[out:json][timeout:25];node["amenity"~"restaurant|cafe|bar"](${bbox});out body;`;
         
         try {
             const res = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: `data=${encodeURIComponent(query)}` });
@@ -194,14 +184,13 @@
             const group = dayData[currentDay].poiLayer;
             group.clearLayers();
             data.elements.forEach(el => {
-                const marker = L.circleMarker([el.lat, el.lon], {
-                    radius: 6, color: '#fff', fillColor: el.tags.amenity === 'cafe' ? '#e67e22' : '#27ae60', weight: 1, fillOpacity: 0.9
-                }).bindPopup(`<b>${el.tags.name || '未名店家'}</b><br>${el.tags.opening_hours || ''}`);
-                group.addLayer(marker);
+                L.circleMarker([el.lat, el.lon], {
+                    radius: 7, color: '#fff', fillColor: el.tags.amenity === 'cafe' ? '#e67e22' : '#27ae60', weight: 2, fillOpacity: 0.9
+                }).bindPopup(`<b>${el.tags.name || '店家'}</b><br>${el.tags.opening_hours || ''}`).addTo(group);
             });
             if(poiVisible) group.addTo(map);
-            dayData[currentDay].poiStatus = `🍴 找到 ${data.elements.length} 處補給點`;
-        } catch (e) { dayData[currentDay].poiStatus = "❌ 補給站讀取失敗"; }
+            dayData[currentDay].poiStatus = `✅ 找到 ${data.elements.length} 個補給站`;
+        } catch (e) { dayData[currentDay].poiStatus = "❌ 無法讀取補給站"; }
         updateUI();
     }
 
@@ -218,10 +207,10 @@
         let arrival = "--:--";
         if (d.dist > 0) {
             const [h, m] = d.startTime.split(':').map(Number);
-            const totalMin = (h * 60 + m) + (d.dist / 4 * 60);
+            const totalMin = (h * 60 + m) + (d.dist / 4.5 * 60);
             arrival = `${Math.floor(totalMin/60)%24}:${Math.round(totalMin%60).toString().padStart(2,'0')}`;
         }
-        document.getElementById('data-text').innerHTML = `⛰️ 總爬升：${d.gain} m<br>⏱️ 預計抵達：<b style="color:#1a508b">${arrival}</b> (時速4km計)`;
+        document.getElementById('data-text').innerHTML = `⛰️ 總爬升：<b>${d.gain}</b> m<br>⏱️ 預計抵達：<b style="color:#1a508b">${arrival}</b> (4.5km/h)`;
         document.getElementById('poi-info').innerText = d.poiStatus;
     }
 
@@ -229,9 +218,13 @@
         navigator.geolocation.getCurrentPosition(p => {
             const ll = [p.coords.latitude, p.coords.longitude];
             map.flyTo(ll, 16);
-            if (userMarker) map.removeLayer(userMarker);
-            userMarker = L.circleMarker(ll, { radius: 9, fillColor: '#007bff', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
-        }, () => alert("請開啟定位權限"));
+            updateUserMarker(ll);
+        }, () => alert("請確保已開啟 GPS 定位權限"));
+    }
+
+    function updateUserMarker(ll) {
+        if (userMarker) userMarker.setLatLng(ll);
+        else userMarker = L.circleMarker(ll, { radius: 10, fillColor: '#007bff', color: '#fff', weight: 3, fillOpacity: 1 }).addTo(map);
     }
 
     function startTracking() {
@@ -242,7 +235,8 @@
             const ll = [p.coords.latitude, p.coords.longitude];
             liveTrackPoints.push(ll);
             liveTrackLayer.setLatLngs(liveTrackPoints);
-            if (userMarker) userMarker.setLatLng(ll);
+            updateUserMarker(ll);
+            map.panTo(ll); // 讓地圖跟隨你的位置
         }, null, { enableHighAccuracy: true });
     }
 
@@ -257,7 +251,7 @@
         poiVisible = !poiVisible;
         const group = dayData[currentDay].poiLayer;
         if(poiVisible) group.addTo(map); else map.removeLayer(group);
-        document.getElementById('poi-toggle').style.opacity = poiVisible ? '1' : '0.4';
+        document.getElementById('poi-toggle').style.background = poiVisible ? '#fff' : '#ddd';
     }
 </script>
 </body>
