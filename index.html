@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro - 終極修正版</title>
+    <title>朝聖助手 Pro - 滾動里程修正版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
@@ -31,7 +31,6 @@
         .stat-item { background: #f8f9fa; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
         .stat-val { display: block; font-weight: bold; color: #1a508b; font-size: 18px; }
 
-        /* 天氣預報樣式 */
         .weather-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; margin-top: 5px; min-height: 80px; }
         .weather-item { min-width: 75px; text-align: center; font-size: 12px; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; }
         .w-temp { font-weight: bold; color: #e67e22; display: block; }
@@ -133,7 +132,6 @@
     let traceLayer = L.polyline([], {color: 'red', weight: 4, dashArray: '5, 8'}).addTo(map);
 
     function switchDay(day) {
-        // 隱入其他天的圖層
         Object.values(dayData).forEach(d => { 
             if(d.gpx) map.removeLayer(d.gpx); 
             map.removeLayer(d.pois); 
@@ -168,19 +166,15 @@
         reader.onload = e => {
             if(dayData[currentDay].gpx) map.removeLayer(dayData[currentDay].gpx);
             
-            // 核心修正：使用強健的載入機制
             const gpx = new L.GPX(e.target.result, { 
                 async: true, 
                 polyline_options: { color: '#1a508b', weight: 5 } 
             }).on('loaded', function(e) {
                 const g = e.target;
                 dayData[currentDay].gpx = g;
-                
-                // 修正公里數獲取方式
                 const distanceMeters = g.get_distance();
                 dayData[currentDay].dist = parseFloat((distanceMeters / 1000).toFixed(2));
                 
-                // 獲取起點座標 (用於天氣)
                 const layers = g.getLayers();
                 if(layers.length > 0 && layers[0].getLatLngs) {
                     const latlngs = layers[0].getLatLngs();
@@ -192,7 +186,7 @@
                 getWeather(dayData[currentDay].startCoord);
                 updateUI();
             }).on('error', function() {
-                alert("GPX 檔案格式錯誤，請更換檔案試試。");
+                alert("GPX 檔案格式錯誤。");
             }).addTo(map);
         };
         reader.readAsText(file);
@@ -210,12 +204,7 @@
                 const rain = data.hourly.precipitation_probability[i];
                 const cloud = data.hourly.cloud_cover[i];
                 const icon = cloud < 30 ? '☀️' : (cloud < 70 ? '⛅' : '☁️');
-                html += `<div class="weather-item">
-                            <div>${i}:00</div>
-                            <div style="font-size:18px">${icon}</div>
-                            <span class="w-temp">${temp}°C</span>
-                            <span class="w-rain">☔${rain}%</span>
-                         </div>`;
+                html += `<div class="weather-item"><div>${i}:00</div><div style="font-size:18px">${icon}</div><span class="w-temp">${temp}°C</span><span class="w-rain">☔${rain}%</span></div>`;
             }
             document.getElementById('weather-list').innerHTML = html;
         } catch(e) { 
@@ -244,10 +233,8 @@
         const speed = parseFloat(document.getElementById('walking-speed').value);
         const startTimeStr = document.getElementById('start-time').value;
         
-        // 更新今日距離
         document.getElementById('today-dist').innerText = `${d.dist} km`;
 
-        // 更新預計抵達
         if (d.dist > 0) {
             const [h, m] = startTimeStr.split(':').map(Number);
             const totalMinutes = (h * 60 + m) + (d.dist / speed * 60);
@@ -256,25 +243,30 @@
             document.getElementById('arrival-time').innerText = `${arrH}:${arrM}`;
         }
 
-        // 更新剩餘總里程
+        // 核心邏輯修正：滾動式計算距離大教堂的總剩餘公里數
+        // 從「當前選擇的天數」開始往後累加所有 GPX 的距離
         let totalRemaining = 0;
+        let hasLaterData = false;
         for (let i = currentDay; i <= 4; i++) {
-            totalRemaining += (dayData[i].dist || 0);
+            if (dayData[i].dist > 0) {
+                totalRemaining += dayData[i].dist;
+                hasLaterData = true;
+            }
         }
         document.getElementById('remain-total').innerText = `${totalRemaining.toFixed(1)} km`;
 
-        // 更新看板
         const panel = document.getElementById('countdown-panel');
         const distLabel = document.getElementById('dist-display');
         const encourage = document.getElementById('encourage-msg');
 
         if (currentDay == 4) {
             panel.className = "countdown-banner gold-panel";
-            distLabel.innerText = totalRemaining > 0 ? `最後 ${totalRemaining.toFixed(1)} km 抵達聖地牙哥！` : "請匯入 D4 檔案";
+            distLabel.innerText = d.dist > 0 ? `最後 ${d.dist.toFixed(1)} km 抵達聖地牙哥！` : "請匯入 D4 檔案";
             encourage.innerText = "¡Santiago te espera! (聖雅各正在等著你！)";
         } else {
             panel.className = "countdown-banner silver-panel";
-            distLabel.innerText = totalRemaining > 0 ? `距離大教堂約剩 ${totalRemaining.toFixed(1)} km` : "請匯入 GPX 檔案";
+            // 根據當前天數的起始點（即該天及其後所有里程總和）來顯示
+            distLabel.innerText = hasLaterData ? `今日出發後，距離大教堂約剩 ${totalRemaining.toFixed(1)} km` : "請匯入 GPX 檔案";
             encourage.innerText = "¡Buen Camino!";
         }
     }
