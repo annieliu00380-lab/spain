@@ -3,13 +3,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝聖助手 Pro - 氣象整合終極版</title>
+    <title>朝聖助手 Pro - 終極修正版</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
         #map { height: 35vh; width: 100%; border-bottom: 2px solid #ccc; }
         
+        /* 倒數計時板 */
         .countdown-banner { padding: 15px; text-align: center; font-weight: bold; transition: 0.5s; }
         .silver-panel { background: linear-gradient(135deg, #bdc3c7, #95a5a6); color: #2c3e50; border-bottom: 3px solid #7f8c8d; }
         .gold-panel { background: linear-gradient(135deg, #f1c40f, #d4af37); color: #5d4037; border-bottom: 3px solid #b8860b; }
@@ -31,8 +32,8 @@
         .stat-val { display: block; font-weight: bold; color: #1a508b; font-size: 18px; }
 
         /* 天氣預報樣式 */
-        .weather-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; margin-top: 10px; border-top: 1px solid #eee; }
-        .weather-item { min-width: 70px; text-align: center; font-size: 12px; background: #fdfdfd; padding: 8px; border-radius: 8px; border: 1px solid #f0f0f0; }
+        .weather-scroll { display: flex; overflow-x: auto; gap: 10px; padding: 10px 0; margin-top: 5px; min-height: 80px; }
+        .weather-item { min-width: 75px; text-align: center; font-size: 12px; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; }
         .w-temp { font-weight: bold; color: #e67e22; display: block; }
         .w-rain { color: #3498db; font-size: 11px; }
 
@@ -50,7 +51,7 @@
 
 <div id="countdown-panel" class="countdown-banner silver-panel">
     <span id="panel-title">Hacia Santiago</span>
-    <span class="countdown-val" id="dist-display">匯入 GPX 以計算里程</span>
+    <span class="countdown-val" id="dist-display">請匯入 GPX 檔案</span>
     <span class="encourage" id="encourage-msg">¡Buen Camino!</span>
 </div>
 
@@ -58,10 +59,10 @@
 
 <div class="container">
     <div class="day-selector">
-        <button class="day-btn active" onclick="switchDay(1)">D1</button>
-        <button class="day-btn" onclick="switchDay(2)">D2</button>
-        <button class="day-btn" onclick="switchDay(3)">D3</button>
-        <button class="day-btn" onclick="switchDay(4)">D4</button>
+        <button class="day-btn active" id="btn-1" onclick="switchDay(1)">D1</button>
+        <button class="day-btn" id="btn-2" onclick="switchDay(2)">D2</button>
+        <button class="day-btn" id="btn-3" onclick="switchDay(3)">D3</button>
+        <button class="day-btn" id="btn-4" onclick="switchDay(4)">D4</button>
     </div>
 
     <div class="card">
@@ -85,9 +86,9 @@
             </div>
         </div>
         <label>🏠 住宿地點</label>
-        <input type="text" id="stay-name" placeholder="輸入今晚旅館" onchange="saveDayData()">
+        <input type="text" id="stay-name" placeholder="輸入旅館名稱" onchange="saveDayData()">
         
-        <label>📎 匯入今日 GPX</label>
+        <label>📎 匯入今日 GPX 檔案 (修正版)</label>
         <input type="file" id="gpx-input" accept=".gpx" onchange="handleGpxUpload(this)">
         
         <div class="stat-grid">
@@ -97,10 +98,9 @@
             <div class="stat-item">剩餘總里程<span class="stat-val" id="remain-total">0 km</span></div>
         </div>
 
-        <!-- 氣象預報區 -->
-        <label style="margin-top:15px;">☀️ 3小時天氣預報 (起點位置)</label>
+        <label style="margin-top:15px;">☀️ 3小時天氣預報 (起點氣象)</label>
         <div class="weather-scroll" id="weather-list">
-            <div style="font-size:12px; color:999;">匯入 GPX 後自動取得天氣...</div>
+            <div style="font-size:12px; color:#999; padding: 10px;">尚未偵測到位置</div>
         </div>
     </div>
 
@@ -133,7 +133,12 @@
     let traceLayer = L.polyline([], {color: 'red', weight: 4, dashArray: '5, 8'}).addTo(map);
 
     function switchDay(day) {
-        Object.values(dayData).forEach(d => { if(d.gpx) map.removeLayer(d.gpx); map.removeLayer(d.pois); });
+        // 隱入其他天的圖層
+        Object.values(dayData).forEach(d => { 
+            if(d.gpx) map.removeLayer(d.gpx); 
+            map.removeLayer(d.pois); 
+        });
+        
         currentDay = day;
         document.querySelectorAll('.day-btn').forEach((b, i) => b.className = (i+1==day ? 'day-btn active' : 'day-btn'));
         document.getElementById('start-time').value = dayData[day].time;
@@ -145,7 +150,7 @@
             map.fitBounds(dayData[day].gpx.getBounds());
             getWeather(dayData[day].startCoord);
         } else {
-            document.getElementById('weather-list').innerHTML = '<div style="font-size:12px; color:999;">未匯入軌跡</div>';
+            document.getElementById('weather-list').innerHTML = '<div style="font-size:12px; color:#999; padding: 10px;">尚未匯入軌跡</div>';
         }
         updateUI();
     }
@@ -162,19 +167,32 @@
         const reader = new FileReader();
         reader.onload = e => {
             if(dayData[currentDay].gpx) map.removeLayer(dayData[currentDay].gpx);
+            
+            // 核心修正：使用強健的載入機制
             const gpx = new L.GPX(e.target.result, { 
                 async: true, 
                 polyline_options: { color: '#1a508b', weight: 5 } 
-            }).on('loaded', ev => {
-                const g = ev.target;
+            }).on('loaded', function(e) {
+                const g = e.target;
                 dayData[currentDay].gpx = g;
-                dayData[currentDay].dist = parseFloat((g.get_distance()/1000).toFixed(2));
-                const coords = g.getLayers()[0].getLatLngs();
-                dayData[currentDay].startCoord = coords[0]; // 取得起點
+                
+                // 修正公里數獲取方式
+                const distanceMeters = g.get_distance();
+                dayData[currentDay].dist = parseFloat((distanceMeters / 1000).toFixed(2));
+                
+                // 獲取起點座標 (用於天氣)
+                const layers = g.getLayers();
+                if(layers.length > 0 && layers[0].getLatLngs) {
+                    const latlngs = layers[0].getLatLngs();
+                    dayData[currentDay].startCoord = Array.isArray(latlngs[0]) ? latlngs[0][0] : latlngs[0];
+                }
+                
                 map.fitBounds(g.getBounds());
                 searchCatering(g);
-                getWeather(coords[0]);
+                getWeather(dayData[currentDay].startCoord);
                 updateUI();
+            }).on('error', function() {
+                alert("GPX 檔案格式錯誤，請更換檔案試試。");
             }).addTo(map);
         };
         reader.readAsText(file);
@@ -200,7 +218,9 @@
                          </div>`;
             }
             document.getElementById('weather-list').innerHTML = html;
-        } catch(e) { console.log("天氣抓取失敗"); }
+        } catch(e) { 
+            document.getElementById('weather-list').innerHTML = '天氣載入失敗';
+        }
     }
 
     async function searchCatering(gpxLayer) {
@@ -223,8 +243,11 @@
         const d = dayData[currentDay];
         const speed = parseFloat(document.getElementById('walking-speed').value);
         const startTimeStr = document.getElementById('start-time').value;
+        
+        // 更新今日距離
         document.getElementById('today-dist').innerText = `${d.dist} km`;
 
+        // 更新預計抵達
         if (d.dist > 0) {
             const [h, m] = startTimeStr.split(':').map(Number);
             const totalMinutes = (h * 60 + m) + (d.dist / speed * 60);
@@ -233,31 +256,40 @@
             document.getElementById('arrival-time').innerText = `${arrH}:${arrM}`;
         }
 
+        // 更新剩餘總里程
         let totalRemaining = 0;
-        for (let i = currentDay; i <= 4; i++) totalRemaining += dayData[i].dist;
+        for (let i = currentDay; i <= 4; i++) {
+            totalRemaining += (dayData[i].dist || 0);
+        }
         document.getElementById('remain-total').innerText = `${totalRemaining.toFixed(1)} km`;
 
+        // 更新看板
         const panel = document.getElementById('countdown-panel');
         const distLabel = document.getElementById('dist-display');
+        const encourage = document.getElementById('encourage-msg');
+
         if (currentDay == 4) {
             panel.className = "countdown-banner gold-panel";
-            distLabel.innerText = totalRemaining > 0 ? `最後 ${totalRemaining.toFixed(1)} km 抵達聖地牙哥！` : "請匯入 D4 軌跡";
+            distLabel.innerText = totalRemaining > 0 ? `最後 ${totalRemaining.toFixed(1)} km 抵達聖地牙哥！` : "請匯入 D4 檔案";
+            encourage.innerText = "¡Santiago te espera! (聖雅各正在等著你！)";
         } else {
             panel.className = "countdown-banner silver-panel";
-            distLabel.innerText = totalRemaining > 0 ? `距離大教堂約剩 ${totalRemaining.toFixed(1)} km` : "匯入 GPX 計算里程";
+            distLabel.innerText = totalRemaining > 0 ? `距離大教堂約剩 ${totalRemaining.toFixed(1)} km` : "請匯入 GPX 檔案";
+            encourage.innerText = "¡Buen Camino!";
         }
     }
 
     function markLoc() {
         navigator.geolocation.getCurrentPosition(p => {
             lastCoord = p.coords;
-            L.marker([p.coords.latitude, p.coords.longitude]).addTo(map).bindPopup("目前位置").openPopup();
-        });
+            L.marker([p.coords.latitude, p.coords.longitude]).addTo(map).bindPopup("目前標記位置").openPopup();
+            alert("位置已標記，可點擊 Line 傳送。");
+        }, () => alert("無法獲取 GPS 位置"));
     }
 
     function shareLine() {
-        if(!lastCoord) return alert("請先標記位置");
-        const msg = encodeURIComponent(`朝聖平安！\nD${currentDay}：${dayData[currentDay].stay || '前進中'}\n抵達預計：${document.getElementById('arrival-time').innerText}\n位置：https://www.google.com/maps?q=${lastCoord.latitude},${lastCoord.longitude}`);
+        if(!lastCoord) return alert("請先點擊『標記位置』");
+        const msg = encodeURIComponent(`朝聖報平安！\n第 ${currentDay} 天：${dayData[currentDay].stay || '前進中'}\n抵達預計：${document.getElementById('arrival-time').innerText}\n目前位置：\nhttp://maps.google.com/maps?q=${lastCoord.latitude},${lastCoord.longitude}`);
         window.open(`https://line.me/R/msg/text/?${msg}`);
     }
 
@@ -276,7 +308,7 @@
                 tracePoints.push(ll);
                 traceLayer.setLatLngs(tracePoints);
                 if (userMarker) userMarker.setLatLng(ll);
-                else userMarker = L.circleMarker(ll, {radius: 7, color: 'blue', fillColor: 'white'}).addTo(map);
+                else userMarker = L.circleMarker(ll, {radius: 7, color: 'blue', fillColor: 'white', fillOpacity: 1}).addTo(map);
                 map.panTo(ll);
             }, null, { enableHighAccuracy: true });
         }
